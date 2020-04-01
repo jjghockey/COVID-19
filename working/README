@@ -1,1 +1,18 @@
-Tmp
+Location for processing daily reports from: 
+
+https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/
+
+001_mk_data.r produces a new text file called 001_covid_daily.csv.  This script does the following: 
+  1. combines all raw .csv files located at the above location. 
+  2. standardizes columns (The data format changed between the 3/21/2020 and 3/22/2020 files)
+  3. standardizes contents of the columns (lowercase all values)
+  4. builds variables to cover the entire time frame of the data. For example, combined_key only exists 3/22 onward, uses province / country from observations before 3/22/2020 to build this variable across all time periods)
+  
+The script does NOT attempt to standardize specific locations into standard labels.  For example, country/region can indicate "China" and "Mainland China."  These are NOT combined into a common label "China."
+
+002_an_data.r - Initial data cleaning and exploratory analysis of the data
+	1. Pulls in state and state abbrevations
+	2. Pulls in state population from wikipedia.org
+	3. Creates a daily, state, object 
+	4. Calculates infection rate per 100,000 population
+	5. Prepares sample graphs on infection rate
