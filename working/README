@@ -13,6 +13,6 @@ The script does NOT attempt to standardize specific locations into standard labe
 002_an_data.r - Initial data cleaning and exploratory analysis of the data
 	1. Pulls in state and state abbrevations
 	2. Pulls in state population from wikipedia.org
-	3. Creates a daily, state, object 
+	3. Creates a daily, by U.S. state object 
 	4. Calculates infection rate per 100,000 population
 	5. Prepares sample graphs on infection rate
