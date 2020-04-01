@@ -3,7 +3,7 @@
 #	Program: 	002_an_data.r                                						          	    #		
 #	Last Update Date: 3/29/2020                                          							#
 #																	                                        			    #
-#	Purpose: Build Visuals                                                    #
+#	Purpose: Build Visuals                                                            #
 #																                                          					#
 #	Notes: 																	                                          #
 #####################################################################################
@@ -116,6 +116,9 @@ covid_st_d<-covid[, list(confirmed=sum(confirmed, na.rm=TRUE)
 
 covid_st_d[, infections_pp100:=(confirmed/pop2019)*100000]  #http://health.utah.gov/epi/diseases/HAI/resources/Cal_Inf_Rates.pdf
 
+reg_pop<-covid_st_d[, .(region, pop2019, state_cln)] %>% unique()
+reg_pop<-reg_pop[is.na(region)==FALSE, list(reg_pop2019=sum(pop2019)), by=region]
+covid_st_d<-merge(covid_st_d, reg_pop, by=c("region"), all.x=TRUE)
 
 #IV. Data Analysis
 
@@ -148,3 +151,18 @@ p<-p+theme(legend.position="none")
 p<-p+labs(title="Infection Rate per 100,000", subtitle="United States by State Code \n (Removing Territories)", x="Date (Since 3/1/2020)", y="State")
 p<-p+theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p4<-p
+
+tbl<-covid_st_d[state_cln!="unk" & state_cln!="ter", list(infection_pp100=(sum(confirmed)/reg_pop2019)*100000), by=list(src, region)]
+tbl<-melt(tbl, id.vars = c("region", "src"))
+
+tbl<-tbl %>% mutate(rescale=scale(value)) %>% as.data.table()
+tbl[, src2:=as.factor(src)]
+ord<-tbl[order(-rescale, region)][, .(region)] %>% unique() %>% pull()
+tbl[, state_cln:=factor(region, levels=c(ord))]
+
+p<-ggplot(tbl[src>=as.Date("2020-03-01")], aes(x=src2, y=state_cln))+geom_tile(aes(fill=rescale), colour="white")
+p<-p+scale_fill_gradient(low="white", high="red")+theme_classic()
+p<-p+theme(legend.position="none")
+p<-p+labs(title="Infection Rate per 100,000", subtitle="United States by Region \n (Removing Territories)", x="Date (Since 3/1/2020)", y="Region")
+p<-p+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p5<-p
