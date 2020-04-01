@@ -1,6 +1,8 @@
 # COVID-19
 Analysis of John Hopkins daily reporting of COVID19 cases located here https://github.com/CSSEGISandData/COVID-19
 
+Information Below copied from https://raw.githubusercontent.com/CSSEGISandData/COVID-19/
+
 # 2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE
 
 
