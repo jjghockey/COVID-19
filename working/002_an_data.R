@@ -136,6 +136,11 @@ p<-ggplot(covid_st_d[state_cln!="unk" & state_cln!="ter" & region=="matl"], aes(
 p<-p+theme_classic()+theme(legend.position = "none")
 p3<-p+labs(title="Infection Rate per 100,000", subtitle="Mid-Atlantic Region by State Code \n (Removing Territories)", x="Date", y="Infections Per 100,000")
 
+p<-ggplot(covid_st_d[state_cln!="unk" & state_cln!="ter" & region=="satl"], aes(x=src, y=infections_pp100, color="red"))+geom_line()+facet_wrap(~state_cln)
+p<-p+theme_classic()+theme(legend.position = "none")
+p4<-p+labs(title="Infection Rate per 100,000", subtitle="South-Atlantic Region by State Code \n (Removing Territories)", x="Date", y="Infections Per 100,000")
+
+
 #B. Many-By-Many (Heatmap)
 tbl<-covid_st_d[state_cln!="unk" & state_cln!="ter", list(infection_pp100=(sum(confirmed)/pop2019)*100000), by=list(src, state_cln)]
 tbl<-melt(tbl, id.vars = c("state_cln", "src"))
@@ -150,7 +155,7 @@ p<-p+scale_fill_gradient(low="white", high="red")+theme_classic()
 p<-p+theme(legend.position="none")
 p<-p+labs(title="Infection Rate per 100,000", subtitle="United States by State Code \n (Removing Territories)", x="Date (Since 3/1/2020)", y="State")
 p<-p+theme(axis.text.x = element_text(angle = 90, hjust = 1))
-p4<-p
+p5<-p
 
 tbl<-covid_st_d[state_cln!="unk" & state_cln!="ter", list(infection_pp100=(sum(confirmed)/reg_pop2019)*100000), by=list(src, region)]
 tbl<-melt(tbl, id.vars = c("region", "src"))
@@ -165,4 +170,4 @@ p<-p+scale_fill_gradient(low="white", high="red")+theme_classic()
 p<-p+theme(legend.position="none")
 p<-p+labs(title="Infection Rate per 100,000", subtitle="United States by Region \n (Removing Territories)", x="Date (Since 3/1/2020)", y="Region")
 p<-p+theme(axis.text.x = element_text(angle = 90, hjust = 1))
-p5<-p
+p6<-p
