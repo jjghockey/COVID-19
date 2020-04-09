@@ -10,9 +10,13 @@ https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_d
   
 The script does NOT attempt to standardize specific locations into standard labels.  For example, country/region can indicate "China" and "Mainland China."  These are NOT combined into a common label "China."
 
-002_an_data.r - Initial data cleaning and exploratory analysis of the data
+002_mk_data.r - Initial data cleaning 
 	1. Pulls in state and state abbrevations
 	2. Pulls in state population from wikipedia.org
-	3. Creates a daily, by U.S. state object 
-	4. Calculates infection rate per 100,000 population
-	5. Prepares sample graphs on infection rate
+	3. Pulls in state population density from wikipedia.org
+	4. Creates a daily, by U.S. state object 
+	5. Calculates infection rate per 100,000 population
+	6. Adds population density by state and region
+	
+003_an_data.r - Initial exploratory analysis with some basic graphs
+
