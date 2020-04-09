@@ -17,6 +17,8 @@ The script does NOT attempt to standardize specific locations into standard labe
 	4. Creates a daily, by U.S. state object 
 	5. Calculates infection rate per 100,000 population
 	6. Adds population density by state and region
+	7. Filters the data to the US
 	
 003_an_data.r - Initial exploratory analysis with some basic graphs
+	1. US only (Based on data created in 002_mk_data.r)
 
