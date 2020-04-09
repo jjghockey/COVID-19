@@ -1,0 +1,182 @@
+#####################################################################################
+#	Engagement: COVID-19 Analysis       	                          							    #
+#	Program: 	002_mk_data_us_cln.r                        						          	    #		
+#	Last Update Date: 3/29/2020                                          							#
+#																	                                        			    #
+#	Purpose: Make a clean file of the US                                              #
+#																                                          					#
+#	Notes: 																	                                          #
+#####################################################################################
+
+
+#I. Setup ----------------------------------------------------------------------------
+# A. Clear environment
+rm(list = ls())
+
+# B. Set working directory
+setwd("C:/users/jguinta/desktop/")
+
+# C. Import custom functions 
+
+# D. Import packages
+require(tidyverse)
+require(data.table)
+require(dtplyr)
+require(stringr)
+require(lubridate)
+require(openxlsx)
+require(stringdist)
+require(sqldf)
+require(RCurl)
+require(rvest)
+require(jsonlite)
+
+
+#II. Data Loading -------------------------------------------------------------------
+covid<-fread("./001_covid_daily.csv")
+
+#III. Data Processing ---------------------------------------------------------------
+#A. Filter to US
+
+covid[, us_flg:="not us"]
+covid[grepl(",us", combined_key)==TRUE, us_flg:="us"]
+covid[grepl(" us", combined_key)==TRUE, us_flg:="us"]
+covid<-covid[us_flg=="us"]
+
+#B. Transform variables
+covid[, src:=as.Date(src, "%m-%d-%Y")]
+
+#C. Clean Region / State
+
+#1. Cleaning 
+covid[grepl(",", province_state)==TRUE, .N, province_state]
+covid[grepl(",", province_state)==TRUE, state_cln:=substr(province_state,regexpr(",", province_state)+1,255)]
+covid[is.na(state_cln), state_cln:=province_state]
+covid[, state_cln:=gsub("\\(from diamond princess\\)", "", state_cln )]
+covid[state_cln=="chicago", state_cln:="il"]  #Chicago is in Illinois
+covid[, state_cln:=str_trim(state_cln)]
+
+for (i in 1:10) {
+  covid[, state_cln:=gsub("  ", " ", state_cln)]
+}
+covid[, state_cln:=str_trim(state_cln)]
+
+#2. Build state-by-abb file
+st<-cbind(state.name, state.abb) %>% as.data.table()
+st[, state.name:=tolower(state.name)]
+st[, state.abb:=tolower(state.abb)]
+
+covid<-merge(covid, st, by.x=c("state_cln"), by.y=c("state.name"), all.x=TRUE)
+covid[is.na(state.abb)==FALSE, state_cln:=state.abb]
+
+#3. Specific coding
+covid[state_cln %in% c("d.c.", "district of columbia"), state_cln:="dc", ]
+covid[state_cln %in% c("u.s.", "diamond princess", "grand princess", "unassigned location", "recovered", "us", "grand princess cruise ship","wuhan evacuee" ), state_cln:="unk"]
+covid[state_cln %in% c("puerto rico"), state_cln:="pr", ]
+covid[state_cln %in% c("american samoa", "guam", "northern mariana islands", "united states virgin islands", "virgin islands"), state_cln:="ter"]
+
+#C. State Population
+url <- "https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population"
+
+#1. Scrape Webpage
+wp<- read_html(url) %>% html_nodes("table.wikitable") %>% html_table(header=T, fill=TRUE) 
+
+wp_alt<-wp[[3]] #Gives region codes by state
+wp_alt<-wp_alt[, c(1,10)] #Gives region codes by state
+names(wp_alt)<-c("state.name", "region")
+wp_alt<-as.data.table(wp_alt)
+wp_alt[, state.name:=tolower(state.name)]
+
+wp<-wp[[1]]
+wp<-wp[2:57, c(3,4)]
+names(wp)<-c("state.name", "pop2019")
+wp<-as.data.table(wp)
+wp[, pop2019:=as.numeric(gsub(",", "", pop2019))]
+wp[, state.name:=tolower(state.name)]
+
+wp<-merge(wp, wp_alt, by=c("state.name"), all.x=TRUE)
+
+wp<-merge(wp, st, by=c("state.name"), all.x=TRUE)
+wp[state.name=="district of columbia", state.abb:="dc"]
+wp[state.name=="puerto rico", state.abb:="pr"]
+wp[is.na(state.abb)==TRUE, state.abb:="ter"]
+wp<-wp[, list(pop2019=sum(pop2019)), by=list(state_cln=state.abb, region=tolower(region))]
+
+
+#2. Add to covid data
+covid<-merge(covid, wp, by=c("state_cln"), all.x=TRUE)
+
+#D. Build Daily Cases / State
+covid_st_d<-covid[, list(confirmed=sum(confirmed, na.rm=TRUE)
+                         , deaths=sum(deaths, na.rm=TRUE)
+                         , recovered=sum(recovered, na.rm=TRUE)
+                         , active=sum(active, na.rm=TRUE)
+                         , pop2019=max(pop2019, na.rm=TRUE)
+                    ), by=list(src, state_cln, region)]
+
+covid_st_d[, infections_pp100:=(confirmed/pop2019)*100000]  #http://health.utah.gov/epi/diseases/HAI/resources/Cal_Inf_Rates.pdf
+
+reg_pop<-covid_st_d[, .(region, pop2019, state_cln)] %>% unique()
+reg_pop<-reg_pop[is.na(region)==FALSE, list(reg_pop2019=sum(pop2019)), by=region]
+covid_st_d<-merge(covid_st_d, reg_pop, by=c("region"), all.x=TRUE)
+
+#D. State Density
+url<-"https://simple.wikipedia.org/wiki/List_of_U.S._states_by_population_density"
+
+#1. Scrape Webpage
+wp<- read_html(url) %>% html_nodes("table.wikitable") %>% html_table(header=T, fill=TRUE) 
+
+wp_alt<-wp
+
+#State Table
+wp<-wp[[4]]
+wp<-wp[c(1:50,64,66,71), c(2,5)]
+names(wp)<-c("state.name", "den2013")
+wp<-as.data.table(wp)
+wp[, den2013:=as.numeric(gsub(",", "", den2013))]
+wp[, state.name:=tolower(state.name)]
+
+wp<-merge(wp, st, by=c("state.name"), all.x=TRUE)
+wp[state.name=="district of columbia", state.abb:="dc"]
+wp[state.name=="puerto rico", state.abb:="pr"]
+wp[is.na(state.abb)==TRUE, state.abb:="ter"]
+
+#Region Table
+wp_alt<-wp_alt[[4]]
+wp_alt<-wp_alt[c(51:59,71), c(2,5)]
+names(wp_alt)<-c("region", "den2013_reg")
+wp_alt<-as.data.table(wp_alt)
+wp_alt[region=="Mid-Atlantic", region:="matl"]
+wp_alt[region=="New England", region:="neng"]
+wp_alt[region=="South Atlantic", region:="satl"]
+wp_alt[region=="East North Central", region:="enc"]
+wp_alt[region=="East South Central", region:="esc"]
+wp_alt[region=="West South Central", region:="wsc"]
+wp_alt[region=="Pacific", region:="pac"]
+wp_alt[region=="West North Central", region:="wnc"]
+wp_alt[region=="Mountain", region:="mtn"]
+wp_alt[region=="Territories", region:="terr."]
+
+#2. Add to covid data
+covid<-merge(covid, wp, by.x=c("state_cln"), by.y=c("state.abb"), all.x=TRUE)
+covid<-merge(covid, wp_alt, by=c("region"), all.x=TRUE)
+
+#D. Build Daily Cases / State
+covid_st_d<-covid[, list(confirmed=sum(confirmed, na.rm=TRUE)
+                         , deaths=sum(deaths, na.rm=TRUE)
+                         , recovered=sum(recovered, na.rm=TRUE)
+                         , active=sum(active, na.rm=TRUE)
+                         , pop2019=max(pop2019, na.rm=TRUE)
+                         , den2013=max(den2013, na.rm=TRUE)
+                         , reg_den2013=max(den2013_reg, na.rm=TRUE)
+), by=list(src, state_cln, region)]
+
+covid_st_d[, infections_pp100:=(confirmed/pop2019)*100000]  #http://health.utah.gov/epi/diseases/HAI/resources/Cal_Inf_Rates.pdf
+covid_st_d[, infections_pp100_den:=infections_pp100/den2013]
+
+reg_pop<-covid_st_d[, .(region, pop2019, state_cln)] %>% unique()
+reg_pop<-reg_pop[is.na(region)==FALSE, list(reg_pop2019=sum(pop2019)), by=region]
+covid_st_d<-merge(covid_st_d, reg_pop, by=c("region"), all.x=TRUE)
+
+#IV. Data Output -----------------------------------------------------------------------------
+write.csv(file="./002_covid_daily_us_cln.csv", covid_st_d)
