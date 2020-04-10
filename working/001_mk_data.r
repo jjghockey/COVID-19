@@ -32,7 +32,7 @@ require(sqldf)
 #II. Data Loading -------------------------------------------------------------------
 start.date<-c("01-22-2020")
 start.date<-as.Date(start.date, "%m-%d-%Y")
-end.date<-c("04-07-2020")
+end.date<-c("04-09-2020")
 end.date<-as.Date(end.date, "%m-%d-%Y")
 
 k<-1
