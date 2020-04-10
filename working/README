@@ -21,4 +21,7 @@ The script does NOT attempt to standardize specific locations into standard labe
 	
 003_an_data.r - Initial exploratory analysis with some basic graphs
 	1. US only (Based on data created in 002_mk_data.r)
+	
+004_an_data.r - Better graphics
+	1. US Only (based on data created in 002_mk_data.r)
 
