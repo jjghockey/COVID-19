@@ -1,0 +1,7 @@
+1. Flow graph (Sankey Diagram)
+	a. One state, timeseries data
+	b. Start at 0 + Confirmed cases - Deaths - Recoveries + Confirmed(t+1), etc...
+	c. x-Axis is time
+	d. y-Axis is flow of Confirmed, deaths, recoveries
+	
+	
