@@ -1,7 +1,7 @@
 #####################################################################################
 #	Engagement: COVID-19 Analysis       	                          							    #
 #	Program: 	002_mk_data_us_cln.r                        						          	    #		
-#	Last Update Date: 3/29/2020                                          							#
+#	Last Update Date: 5/3/2020                                          							#
 #																	                                        			    #
 #	Purpose: Make a clean file of the US                                              #
 #																                                          					#
