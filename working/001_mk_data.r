@@ -1,7 +1,7 @@
 #####################################################################################
 #	Engagement: COVID-19 Analysis       	                          							    #
 #	Program: 	001_mk_data.r                                						          	    #		
-#	Last Update Date: 3/29/2020                                          							#
+#	Last Update Date: 6/26/2020                                          							#
 #																	                                        			    #
 #	Purpose: Load and prepare data                                                    #
 #																                                          					#
